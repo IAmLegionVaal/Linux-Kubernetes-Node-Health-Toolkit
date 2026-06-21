@@ -1,6 +1,6 @@
 # Linux Kubernetes Node Health Toolkit
 
-A Linux support toolkit for diagnosing Kubernetes node problems and applying selected guarded node-service repairs.
+A Linux support toolkit for diagnosing Kubernetes node problems and applying selected guarded node-service and scheduling repairs.
 
 ## Diagnostic script
 
@@ -10,6 +10,8 @@ sudo ./src/kubernetes_node_health.sh --kubeconfig ~/.kube/config --node worker-0
 ```
 
 ## Repair script
+
+Preview a kubelet restart:
 
 ```bash
 chmod +x src/kubernetes_node_repair.sh
@@ -21,21 +23,30 @@ Examples:
 ```bash
 sudo ./src/kubernetes_node_repair.sh --reset-kubelet --restart-kubelet
 sudo ./src/kubernetes_node_repair.sh --restart-runtime
-sudo ./src/kubernetes_node_repair.sh --node worker-01 --uncordon
+./src/kubernetes_node_repair.sh --node worker-01 --cordon
+./src/kubernetes_node_repair.sh --node worker-01 --uncordon
 ```
+
+Use `--kubeconfig PATH` when the default kubectl context is not appropriate.
 
 ## What the repair does
 
-- Reloads systemd and clears stale kubelet failure state.
+- Reloads systemd and clears stale kubelet failure state when selected.
 - Restarts and verifies kubelet.
 - Detects and restarts containerd, CRI-O or Docker when explicitly selected.
-- Marks one selected Kubernetes node schedulable with `kubectl uncordon`.
+- Cordons or uncordons one explicitly selected Kubernetes node.
+- Backs up existing kubelet and container-runtime configuration files before service changes.
+- Saves the selected node definition before a scheduling change.
 - Captures kubelet, runtime and selected-node state before and after repair.
-- Supports a selected kubeconfig, dry-run, confirmation prompts, logs and clear exit codes.
+- Supports a selected kubeconfig, dry-run, confirmation prompts, privilege handling, action logs and clear exit codes.
 
 ## Safety
 
-Restarting kubelet or the container runtime can briefly affect workloads. The tool does not drain nodes, delete pods, change workloads, patch resources or modify cluster configuration automatically.
+Restarting kubelet or the container runtime can briefly affect workloads. Cordoning changes scheduling but does not evict existing pods. The tool does not drain nodes, delete pods, change workloads, remove containers or edit cluster resources beyond the selected cordon state.
+
+## Validation note
+
+The scripts were not runtime-tested on a Kubernetes node during this repository update. Validate them in a non-production environment before operational use.
 
 ## Author
 
